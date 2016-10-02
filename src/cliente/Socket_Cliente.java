@@ -3,7 +3,6 @@ package cliente;
 import java.io.IOException;
 import java.io.PrintStream;
 import java.net.Socket;
-import java.util.Scanner;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -15,6 +14,9 @@ public class Socket_Cliente extends javax.swing.JFrame {
     
     private static String ip;
     private static int porta;
+    private static Socket cliente;
+    private static PrintStream saida;
+    private static boolean conversa = false;
     
     /**
      * Creates new form Socket_Cliente
@@ -40,9 +42,12 @@ public class Socket_Cliente extends javax.swing.JFrame {
         tfIp = new javax.swing.JTextField();
         tfPorta = new javax.swing.JTextField();
         btConectar = new javax.swing.JButton();
-        jButton2 = new javax.swing.JButton();
+        btEncerrar = new javax.swing.JButton();
         jScrollPane1 = new javax.swing.JScrollPane();
+        textAreaEnviar = new javax.swing.JTextArea();
+        jScrollPane2 = new javax.swing.JScrollPane();
         textArea = new javax.swing.JTextArea();
+        btEnviar = new javax.swing.JButton();
 
         jLabel1.setFont(new java.awt.Font("Microsoft YaHei UI", 1, 18)); // NOI18N
         jLabel1.setForeground(new java.awt.Color(255, 255, 255));
@@ -78,12 +83,37 @@ public class Socket_Cliente extends javax.swing.JFrame {
             }
         });
 
-        jButton2.setFont(new java.awt.Font("Microsoft YaHei UI", 0, 12)); // NOI18N
-        jButton2.setText("Encerrar conexão");
+        btEncerrar.setFont(new java.awt.Font("Microsoft YaHei UI", 0, 14)); // NOI18N
+        btEncerrar.setText("Encerrar conexão");
+        btEncerrar.setEnabled(false);
+        btEncerrar.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                btEncerrarActionPerformed(evt);
+            }
+        });
 
+        textAreaEnviar.setColumns(20);
+        textAreaEnviar.setLineWrap(true);
+        textAreaEnviar.setRows(5);
+        textAreaEnviar.setWrapStyleWord(true);
+        textAreaEnviar.setEnabled(false);
+        jScrollPane1.setViewportView(textAreaEnviar);
+
+        textArea.setEditable(false);
         textArea.setColumns(20);
+        textArea.setLineWrap(true);
         textArea.setRows(5);
-        jScrollPane1.setViewportView(textArea);
+        textArea.setWrapStyleWord(true);
+        jScrollPane2.setViewportView(textArea);
+
+        btEnviar.setFont(new java.awt.Font("Microsoft YaHei UI", 0, 14)); // NOI18N
+        btEnviar.setText("Enviar");
+        btEnviar.setEnabled(false);
+        btEnviar.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                btEnviarActionPerformed(evt);
+            }
+        });
 
         javax.swing.GroupLayout jPanel1Layout = new javax.swing.GroupLayout(jPanel1);
         jPanel1.setLayout(jPanel1Layout);
@@ -92,21 +122,27 @@ public class Socket_Cliente extends javax.swing.JFrame {
             .addComponent(jLabel2, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
             .addGroup(jPanel1Layout.createSequentialGroup()
                 .addContainerGap()
-                .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.TRAILING)
-                    .addComponent(jLabel4)
-                    .addComponent(jLabel3))
-                .addGap(18, 18, 18)
                 .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                    .addComponent(tfIp, javax.swing.GroupLayout.PREFERRED_SIZE, 123, javax.swing.GroupLayout.PREFERRED_SIZE)
-                    .addComponent(tfPorta, javax.swing.GroupLayout.PREFERRED_SIZE, 56, javax.swing.GroupLayout.PREFERRED_SIZE))
+                    .addGroup(jPanel1Layout.createSequentialGroup()
+                        .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.TRAILING)
+                            .addComponent(jLabel4)
+                            .addComponent(jLabel3))
+                        .addGap(18, 18, 18)
+                        .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                            .addComponent(tfIp, javax.swing.GroupLayout.PREFERRED_SIZE, 123, javax.swing.GroupLayout.PREFERRED_SIZE)
+                            .addComponent(tfPorta, javax.swing.GroupLayout.PREFERRED_SIZE, 56, javax.swing.GroupLayout.PREFERRED_SIZE)))
+                    .addComponent(btEncerrar))
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, 76, Short.MAX_VALUE)
-                .addComponent(btConectar)
-                .addGap(49, 49, 49))
-            .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, jPanel1Layout.createSequentialGroup()
-                .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-                .addComponent(jButton2, javax.swing.GroupLayout.PREFERRED_SIZE, 170, javax.swing.GroupLayout.PREFERRED_SIZE)
-                .addContainerGap())
-            .addComponent(jScrollPane1)
+                .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                    .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, jPanel1Layout.createSequentialGroup()
+                        .addComponent(btConectar)
+                        .addGap(49, 49, 49))
+                    .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, jPanel1Layout.createSequentialGroup()
+                        .addComponent(btEnviar, javax.swing.GroupLayout.PREFERRED_SIZE, 92, javax.swing.GroupLayout.PREFERRED_SIZE)
+                        .addContainerGap())))
+            .addComponent(jScrollPane1, javax.swing.GroupLayout.Alignment.TRAILING)
+            .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                .addComponent(jScrollPane2, javax.swing.GroupLayout.DEFAULT_SIZE, 400, Short.MAX_VALUE))
         );
         jPanel1Layout.setVerticalGroup(
             jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
@@ -123,11 +159,18 @@ public class Socket_Cliente extends javax.swing.JFrame {
                             .addComponent(jLabel4)
                             .addComponent(tfPorta, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)))
                     .addComponent(btConectar, javax.swing.GroupLayout.PREFERRED_SIZE, 46, javax.swing.GroupLayout.PREFERRED_SIZE))
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, 161, Short.MAX_VALUE)
+                .addComponent(jScrollPane1, javax.swing.GroupLayout.PREFERRED_SIZE, 83, javax.swing.GroupLayout.PREFERRED_SIZE)
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                .addComponent(jScrollPane1, javax.swing.GroupLayout.PREFERRED_SIZE, 163, javax.swing.GroupLayout.PREFERRED_SIZE)
-                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
-                .addComponent(jButton2)
-                .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
+                .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING, false)
+                    .addComponent(btEnviar, javax.swing.GroupLayout.DEFAULT_SIZE, 37, Short.MAX_VALUE)
+                    .addComponent(btEncerrar, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
+                .addContainerGap())
+            .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, jPanel1Layout.createSequentialGroup()
+                    .addContainerGap(104, Short.MAX_VALUE)
+                    .addComponent(jScrollPane2, javax.swing.GroupLayout.PREFERRED_SIZE, 141, javax.swing.GroupLayout.PREFERRED_SIZE)
+                    .addContainerGap(149, Short.MAX_VALUE)))
         );
 
         javax.swing.GroupLayout layout = new javax.swing.GroupLayout(getContentPane());
@@ -153,26 +196,63 @@ public class Socket_Cliente extends javax.swing.JFrame {
         
         tfPorta.setEditable(false);
         
-        Socket cliente;
         try {
             cliente = new Socket(ip, porta);
+            
+            saida = new PrintStream(cliente.getOutputStream());
+            
+            btConectar.setEnabled(false);
+            
+            btEnviar.setEnabled(true);
+            
+            textAreaEnviar.setEnabled(true);
+            
+            btEncerrar.setEnabled(true);
+            
+            textArea.setEnabled(true);            
         } catch (IOException ex) {
             Logger.getLogger(Socket_Cliente.class.getName()).log(Level.SEVERE, null, ex);
         }
      
-        textArea.append("O cliente se conectou ao servidor! Digite sua mensagem:\n");
-     
-        Scanner teclado = new Scanner(System.in);
-     
-        PrintStream saida = new PrintStream(cliente.getOutputStream());
-     
-        while (teclado.hasNextLine()) {
-            saida.println(teclado.nextLine());
-        }
-     
-        saida.close();
-        teclado.close();
+        
     }//GEN-LAST:event_btConectarActionPerformed
+
+    private void btEncerrarActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btEncerrarActionPerformed
+        if(btEncerrar.isEnabled()){
+            try {
+                saida.close();
+                cliente.close();
+                btConectar.setEnabled(true);
+                tfPorta.setText("");
+                btEnviar.setEnabled(false);
+                btEncerrar.setEnabled(false);
+                textArea.setText("");
+                textArea.setEnabled(false);
+                textAreaEnviar.setText("");
+                textAreaEnviar.setEnabled(false);
+                conversa = false;
+            } catch (IOException ex) {
+                Logger.getLogger(Socket_Cliente.class.getName()).log(Level.SEVERE, null, ex);
+            } 
+        }
+    }//GEN-LAST:event_btEncerrarActionPerformed
+
+    private void btEnviarActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btEnviarActionPerformed
+        if(btEnviar.isEnabled()){
+            String novaMsg = textAreaEnviar.getText();
+            
+            if(!conversa){
+                conversa = true;
+                textArea.append("Você escreveu: " + novaMsg);   
+            }else{
+                textArea.append("\n" + "Você escreveu: " + novaMsg); 
+            }
+            
+            saida.println(novaMsg);
+            
+            textAreaEnviar.setText("");
+        }
+    }//GEN-LAST:event_btEnviarActionPerformed
 
     /**
      * @param args the command line arguments
@@ -211,14 +291,17 @@ public class Socket_Cliente extends javax.swing.JFrame {
 
     // Variables declaration - do not modify//GEN-BEGIN:variables
     private javax.swing.JButton btConectar;
-    private javax.swing.JButton jButton2;
+    private javax.swing.JButton btEncerrar;
+    private javax.swing.JButton btEnviar;
     private javax.swing.JLabel jLabel1;
     private javax.swing.JLabel jLabel2;
     private javax.swing.JLabel jLabel3;
     private javax.swing.JLabel jLabel4;
     private javax.swing.JPanel jPanel1;
     private javax.swing.JScrollPane jScrollPane1;
-    private static javax.swing.JTextArea textArea;
+    private javax.swing.JScrollPane jScrollPane2;
+    private javax.swing.JTextArea textArea;
+    private static javax.swing.JTextArea textAreaEnviar;
     private static javax.swing.JTextField tfIp;
     private static javax.swing.JTextField tfPorta;
     // End of variables declaration//GEN-END:variables

@@ -4,6 +4,8 @@ import java.io.IOException;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.Scanner;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  *
@@ -12,6 +14,9 @@ import java.util.Scanner;
 public class Socket_Servidor extends javax.swing.JFrame {
     
     private static int porta;
+    private static Thread threadCliente;
+    private static ClienteThread clienteThread;
+    private static ServerSocket servidor;
 
     /**
      * Creates new form Socket_Servidor
@@ -38,6 +43,7 @@ public class Socket_Servidor extends javax.swing.JFrame {
         jLabel2 = new javax.swing.JLabel();
         tfPorta = new javax.swing.JTextField();
         btOk = new javax.swing.JButton();
+        btEncerrar = new javax.swing.JButton();
 
         jTextArea1.setColumns(20);
         jTextArea1.setRows(5);
@@ -47,8 +53,11 @@ public class Socket_Servidor extends javax.swing.JFrame {
 
         jPanel1.setBackground(new java.awt.Color(0, 0, 0));
 
+        textArea.setEditable(false);
         textArea.setColumns(20);
+        textArea.setLineWrap(true);
         textArea.setRows(5);
+        textArea.setWrapStyleWord(true);
         jScrollPane2.setViewportView(textArea);
 
         jLabel1.setFont(new java.awt.Font("Microsoft YaHei UI", 1, 18)); // NOI18N
@@ -60,11 +69,21 @@ public class Socket_Servidor extends javax.swing.JFrame {
         jLabel2.setForeground(new java.awt.Color(255, 255, 255));
         jLabel2.setText("Porta");
 
+        btOk.setFont(new java.awt.Font("Microsoft YaHei UI", 0, 14)); // NOI18N
         btOk.setText("Ok");
         btOk.setToolTipText("");
         btOk.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
                 btOkActionPerformed(evt);
+            }
+        });
+
+        btEncerrar.setFont(new java.awt.Font("Microsoft YaHei UI", 0, 14)); // NOI18N
+        btEncerrar.setText("Encerrar");
+        btEncerrar.setEnabled(false);
+        btEncerrar.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                btEncerrarActionPerformed(evt);
             }
         });
 
@@ -79,9 +98,11 @@ public class Socket_Servidor extends javax.swing.JFrame {
                 .addComponent(jLabel2)
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                 .addComponent(tfPorta, javax.swing.GroupLayout.PREFERRED_SIZE, 80, javax.swing.GroupLayout.PREFERRED_SIZE)
-                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
                 .addComponent(btOk)
-                .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                .addComponent(btEncerrar)
+                .addContainerGap())
         );
         jPanel1Layout.setVerticalGroup(
             jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
@@ -89,11 +110,12 @@ public class Socket_Servidor extends javax.swing.JFrame {
                 .addComponent(jLabel1, javax.swing.GroupLayout.PREFERRED_SIZE, 44, javax.swing.GroupLayout.PREFERRED_SIZE)
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                 .addComponent(jScrollPane2, javax.swing.GroupLayout.PREFERRED_SIZE, 169, javax.swing.GroupLayout.PREFERRED_SIZE)
-                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, 32, Short.MAX_VALUE)
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, 28, Short.MAX_VALUE)
                 .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
                     .addComponent(jLabel2)
                     .addComponent(tfPorta, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
-                    .addComponent(btOk))
+                    .addComponent(btOk)
+                    .addComponent(btEncerrar))
                 .addGap(26, 26, 26))
         );
 
@@ -116,13 +138,37 @@ public class Socket_Servidor extends javax.swing.JFrame {
         
         tfPorta.setEditable(false);
         
-        btOk.setVisible(false);
+        btOk.setEnabled(false);
+        
+        textArea.setEnabled(true);
+        
+        try {
+            Servidor();
+        } catch (IOException ex) {
+            Logger.getLogger(Socket_Servidor.class.getName()).log(Level.SEVERE, null, ex);
+        }
     }//GEN-LAST:event_btOkActionPerformed
+
+    private void btEncerrarActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btEncerrarActionPerformed
+        if(btEncerrar.isEnabled()){
+            try {
+                threadCliente.stop();
+                servidor.close();
+                btEncerrar.setEnabled(false);
+                btOk.setEnabled(true);
+                tfPorta.setEditable(true);
+                textArea.setText(" ");
+                textArea.setEnabled(false);
+            } catch (IOException e) {
+                System.out.println("Não foi possível encerrar o servidor: " + e);
+            }
+        }
+    }//GEN-LAST:event_btEncerrarActionPerformed
 
     /**
      * @param args the command line arguments
      */
-    public static void main(String args[]) throws IOException {
+    public static void main(String args[]){
         /* Set the Nimbus look and feel */
         //<editor-fold defaultstate="collapsed" desc=" Look and feel setting code (optional) ">
         /* If Nimbus (introduced in Java SE 6) is not available, stay with the default look and feel.
@@ -153,30 +199,26 @@ public class Socket_Servidor extends javax.swing.JFrame {
             }
         });
         
-        Servidor();
-        
     }
     
     public static void Servidor() throws IOException{
-        
-        ServerSocket servidor = new ServerSocket(porta);
+        try{
+            servidor = new ServerSocket(porta);
 
-        Socket cliente = servidor.accept();
-
-        textArea.append("Nova conexão com o cliente " + cliente.getInetAddress().getHostAddress());
-
-        Scanner entrada = new Scanner(cliente.getInputStream());
-
-        while (entrada.hasNextLine()) {
-            System.out.println("O cliente digitou: " + entrada.nextLine());
+            textArea.append("Porta " + porta + " aberta...Aguarde a conexão do cliente.");
+            
+            btEncerrar.setEnabled(true);
+            
+            clienteThread = new ClienteThread(servidor);
+            threadCliente = new Thread(clienteThread);
+            threadCliente.start();
+        }catch (IOException e){
+            System.out.println("Erro ao abrir a porta " + porta + ": " + e);
         }
-     
-        entrada.close();
-        servidor.close();
-        
     }
 
     // Variables declaration - do not modify//GEN-BEGIN:variables
+    private static javax.swing.JButton btEncerrar;
     private javax.swing.JButton btOk;
     private javax.swing.JLabel jLabel1;
     private javax.swing.JLabel jLabel2;
@@ -184,7 +226,7 @@ public class Socket_Servidor extends javax.swing.JFrame {
     private javax.swing.JScrollPane jScrollPane1;
     private javax.swing.JScrollPane jScrollPane2;
     private javax.swing.JTextArea jTextArea1;
-    private static javax.swing.JTextArea textArea;
+    public static javax.swing.JTextArea textArea;
     private javax.swing.JTextField tfPorta;
     // End of variables declaration//GEN-END:variables
 }
